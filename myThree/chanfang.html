@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>厂房</title>
+	<script src="js/three.js" type="text/javascript" charset="utf-8"></script>
+	<!--<script src="js/three.min.js" type="text/javascript" charset="utf-8"></script>-->
+	<script src="js/OBJLoader.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/Detector.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/TrackballControls.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/OrbitControls.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/stats.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/MTLLoader.js" type="text/javascript" charset="utf-8"></script>
+	<style type="text/css">
+		html,
+		body {
+			margin: 0px;
+			padding: 0px;
+			height: 100%;
+			position: relative;
+			color: #f7f3f3;
+
+		}
+
+		.ShowPanel {
+			width: 100%;
+			height: 100%;
+			background-color: #be9999;
+		}
+	</style>
+</head>
+<!--微调渲染机制  c语言修改-->
+<script id="vertMerged" type="x-shader/x-vertex">
+	#define SHADER_NAME vertMerged precision highp float; uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix; attribute vec3 position; #ifdef PICKING attribute vec3 pickingColor; #else attribute vec3 color; varying vec3 vPosition; #endif varying vec3 vColor; void main() { vec3 positionEye = ( modelViewMatrix * vec4( position, 1.0 ) ).xyz; #ifdef PICKING vColor = pickingColor; #else vColor = color; vPosition = positionEye; #endif gl_Position = projectionMatrix * vec4( positionEye, 1.0 ); }
+</script>
+<script id="fragMerged" type="x-shader/x-fragment">
+	#define SHADER_NAME fragMerged #extension GL_OES_standard_derivatives : enable precision highp float; varying vec3 vColor; #ifndef PICKING varying vec3 vPosition; #endif void main() { #ifdef PICKING gl_FragColor = vec4( vColor, 1.0 ); #else vec3 fdx = dFdx( vPosition ); vec3 fdy = dFdy( vPosition ); vec3 normal = normalize( cross( fdx, fdy ) ); float diffuse = dot( normal, vec3( 0.0, 0.0, 1.0 ) ); gl_FragColor = vec4( diffuse * vColor, 1.0 ); #endif }
+</script>
+<script id="vertInstanced" type="x-shader/x-vertex">
+	#define SHADER_NAME vertInstanced precision highp float; uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix; attribute vec3 position; attribute vec3 mcol0; attribute vec3 mcol1; attribute vec3 mcol2; attribute vec3 mcol3; #ifdef PICKING attribute vec3 pickingColor; #else attribute vec3 color; varying vec3 vPosition; #endif varying vec3 vColor; void main() { mat4 matrix = mat4( vec4( mcol0, 0 ), vec4( mcol1, 0 ), vec4( mcol2, 0 ), vec4( mcol3, 1 ) ); vec3 positionEye = ( modelViewMatrix * matrix * vec4( position, 1.0 ) ).xyz; #ifdef PICKING vColor = pickingColor; #else vColor = color; vPosition = positionEye; #endif gl_Position = projectionMatrix * vec4( positionEye, 1.0 ); }
+</script>
+<script type="xme-shader/x-fragnt" id="fragmentShader">
+	uniform vec3 topColor; uniform vec3 bottomColor; uniform float offset; uniform float exponent; varying vec3 vWorldPosition; void main() { float h = normalize( vWorldPosition + offset ).y; gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), exponent ), 0.0 ) ), 1.0 ); }
+</script>
+<script type="x-shader/x-vertex" id="vertexShader">
+		varying vec3 vWorldPosition; void main() { vec4 worldPosition = modelMatrix * vec4( position, 1.0 ); vWorldPosition = worldPosition.xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }
+	</script>
+
+<body>
+	<button id="test">test</button>
+	<div id="ShowPanel" class="ShowPanel"></div>
+</body>
+<script type="text/javascript">
+	"use strict";
+	class modeFatory {
+
+		constructor() {//先
+			this.shadowCameraHelper;
+			this.lightHelper;
+			this.flag = false;
+			this.urlArrs;
+			this.textureUrls;
+			this.showPanel = document.getElementById("ShowPanel"); //获取母版
+			//定义背景、相机、渲染器
+			this.scene = new THREE.Scene();
+			this._fov = 35;
+			this.camera = new THREE.PerspectiveCamera(this._fov, window.innerWidth / window.innerHeight, 1, 5000);
+			this.renderer = new THREE.WebGLRenderer();
+			this.object3D = new THREE.Object3D();
+			this.texture = new THREE.TextureLoader(); //材质
+			this.mouse = new THREE.Vector2();
+
+			//操作控制台
+			this.controls;
+			this.mouse = new THREE.Vector2();
+			//obj加载器
+			this.loader = new THREE.OBJLoader();
+			//射线定位加载
+			this.raycaster = new THREE.Raycaster(), this.INTERSECTED;
+			// 坐标定位数组
+			this.locationArrX =  [];
+			this.locationArrY =  [];
+			this.locationArrZ =  [];
+			//获取刀头和横梁
+			this.knife = {};
+			this.beam = {};
+			this.cutter = []; 
+		}
+
+		get fatoryUrls() { //获取和设置模型地址
+			return this.urlArrs = urlsArr;
+		}
+		set fatoryUrls(urlsArr) {
+			this.urlArrs = urlsArr;
+		}
+
+		set flags(flags) {
+			this.flag = flags;
+		}
+
+		get fatoryTexture() { //获取模型材质
+			return this.textureUrls;
+		}
+		set fatoryTexture(urlsArr) {//设置模型材质
+			this.textureUrls = urlsArr;
+		}
+
+		fatoryInit() {//模型初始化
+			
+			//绑定窗口和文档流中事件
+			this.sceneInit();
+		}
+		animate() {
+			this.controls.update();
+			this.render();
+		}
+		setTimeOutOfAnimate() {
+			if (this.flag) {
+				this.animate();
+				requestAnimationFrame(this.setTimeOutOfAnimate.bind(this));
+			}
+		}
+		onWindowResize() {//窗口变化
+			this.cameraFovReset();
+			this.camera.aspect = window.innerWidth / window.innerHeight;
+			this.camera.updateProjectionMatrix();
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+		}
+		render() {//渲染
+			//辅助线更新
+			// console.log('this.lightHelper,this.shadowCameraHelper',this.lightHelper,this.shadowCameraHelper);
+			// this.lightHelper.update();
+			// this.shadowCameraHelper.update();
+			
+			//射线定位方法个体
+			this.raycaster.setFromCamera(this.mouse, this.camera);
+			let intersects = this.raycaster.intersectObjects(this.scene.children[this.scene.children.length - 1].children);
+			//			选中
+			let currentHex = {};
+			if (intersects.length > 0) {
+
+				if (this.INTERSECTED != intersects[0].object) {
+					if (this.INTERSECTED) {
+						// this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+						if(this.INTERSECTED.material.length == undefined){
+							this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+						}else{
+							this.INTERSECTED.material.forEach((element,index) => {
+								element.emissive.setHex(currentHex[index]);
+							});
+						}
+						
+					}
+					this.INTERSECTED = intersects[0].object;
+					if(this.INTERSECTED.material.length == undefined){
+						currentHex = this.INTERSECTED.material.emissive.getHex();
+						this.INTERSECTED.material.emissive.setHex(0xff00ff);
+					}else{
+						this.INTERSECTED.material.forEach((element,index) => {
+							currentHex[index] = element.emissive.getHex();
+							element.emissive.setHex(0xff00ff);
+						});
+					}
+					// currentHex = this.INTERSECTED.material.emissive.getHex();
+					// this.INTERSECTED.material.emissive.setHex(0xff00ff);
+					// 选中机器
+				}
+			} else {
+
+				if (this.INTERSECTED){
+					if(this.INTERSECTED.material.length == undefined){
+						this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+					}else{
+						this.INTERSECTED.material.forEach((element,index) => {
+							element.emissive.setHex(currentHex[index]);
+						});
+					}
+					
+				}
+				//  this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+
+				this.INTERSECTED = null;
+			}
+
+			//渲染重置
+
+			this.renderer.render(this.scene, this.camera);
+		}
+
+		$deg(deg) {//角度返回器
+			return (Math.PI / 180) * deg;
+		}
+		sceneInit() { //场景初始化
+			this.camera.position.y = 3500;
+			this.camera.position.z = -10;
+			//灯光
+			let ambient = new THREE.AmbientLight(0xffffff, 0.7);
+			this.scene.add(ambient);
+				// 点光源
+			let spotLight = new THREE.SpotLight( 0xfefefe, 0.45 );
+			this.camera.add( spotLight );
+			//场景
+			this.scene.add(this.camera);
+			
+			//辅助线设置
+		    this.lightHelper = new THREE.SpotLightHelper(spotLight);
+			// this.scene.add(this.lightHelper);
+		   	this.shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+			// this.scene.add(this.shadowCameraHelper);
+
+			this.renderer.setClearColor(0xffffff, 1);
+			this.renderer.setPixelRatio(window.devicePixelRatio);
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+			//物体影子开关
+			this.renderer.shadowMap.enabled = true;
+			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			this.renderer.gammaInput = true;
+			this.renderer.gammaOutput = true;
+			
+			/***
+			 *视角插件 
+			 *maxPolarAngle 最大视角角度
+			 *autoRotate    是否旋转
+			 *noZoom        是否放大
+			 * 
+			 */
+			this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+			this.controls.addEventListener('change', this.render.bind(this));
+			//this.controls.maxPolarAngle = this.$deg(60);
+			//this.controls.autoRotate = false;
+
+			window.addEventListener('resize', this.onWindowResize.bind(this), false);
+			document.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
+			this.showPanel.appendChild(this.renderer.domElement);
+			this.render(); 
+
+		}
+		onDocumentMouseMove(e) {//鼠标移动目标
+			e.preventDefault();
+			this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+			this.mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
+		}
+		numProcessing(num1,num2){//数字比较
+			if((/^\-\d+\.?\d*$/.test(num1)&&/^\-\d+\.?\d*$/.test(num2))||( /^\d+$/.test(num1)&&/^\d+$/.test(num2))){
+				return Math.abs(Math.abs(num1)- Math.abs(num2));
+			}else{
+				return Math.abs(num1-num2);
+			}
+		}
+		cutterMove(type,distance,machineLength){//切割机的刀移动
+			console.log(this.cutter,this.cutter.length);
+			let realLength = 0;
+			let proportion = distance/machineLength;
+			if(this.cutter.length<2){
+				let maxX = Math.max.apply(null,this.locationArrX);
+				let minX = Math.min.apply(null,this.locationArrX);
+				realLength =this.numProcessing(maxX,minX);
+			}else{
+				this.cutter[type-1].beam.geometry.boundingSphere.center.x
+				realLength =this.numProcessing(this.cutter[0].beam.geometry.boundingSphere.center.x,this.cutter[1].beam.geometry.boundingSphere.center.x);
+			}
+			console.log(realLength,proportion,proportion*realLength);
+			for(let i in this.cutter){
+				this.cutter[i].beam.position.x = proportion*realLength;
+				this.cutter[i].knife.position.x = proportion*realLength;
+				this.cutter[i].knife.position.z = proportion*realLength;
+			}
+			// this.cutter[(type-1)].beam.position.x = distance;
+		}
+		mtlLoader(){//MTL材质加载器
+			let mtlLoader = new THREE.MTLLoader();
+			return new Promise(function(resolve,reject){
+				mtlLoader.load( 'model/shiKe/mtl/m_machine.mtl', function( materials ) {
+					resolve(materials);				
+				});
+			})						
+		}
+
+
+		loadObjFile() {//加载obj文件
+			let _ = this;
+			if (this.urlArrs.length == 0) {
+				return;
+			} else {
+				for (let i in _.urlArrs) {
+					let _child = [];
+					_.mtlLoader().then(function(materials){
+						_.loader.setMaterials(materials);
+						_.loader.load(_.urlArrs[i], function (object) {
+							object.traverse(function (child) {
+								if (child instanceof THREE.Mesh) {
+									_.Sorting(child);
+									child.rotation.set(_.$deg(-90),0, 0);
+									child.castShadow = true;
+									child.receiveShadow = false;
+									_child.push(child);
+								}
+							});
+							for (let i in _child) {
+								_.object3D.add(_child[i]);
+							}
+
+							_.cameraFovReset();
+							_.scene.add(_.object3D);
+
+						});
+					});
+				}
+			}
+
+		} 
+
+		Sorting(mesh){//整合所有模型的xz的组合和获取横梁、刀头
+			if(mesh.name.indexOf("beam")>0){
+				let num = ~~(mesh.name.replace(/[^0-9]/ig,""));
+				this.beam[num] = mesh;
+			}else if(mesh.name.indexOf("knife")>0){
+				let num = ~~(mesh.name.replace(/[^0-9]/ig,""));
+				this.knife[num] = mesh;
+			}
+			for(let i in this.beam){
+				let mode = {};
+				mode['knife'] = this.knife[i];
+				mode['beam'] = this.beam[i];
+				this.cutter[i-1] = mode;		
+			}
+
+
+			mesh.geometry.computeBoundingSphere();
+			let  t  = 	mesh.clone();
+			this.locationArrX.push(t.geometry.boundingSphere.center.x);
+			this.locationArrZ.push(t.geometry.boundingSphere.center.z);
+		}
+		cameraReset(){//相机位置重置
+			if(this.camera.position.x==-2293&&this.camera.position.y==-1437&&this.camera.position.z==-2015){
+			}
+		}
+		cameraFovReset(){//相机焦距（fov）调整
+			let maxX = Math.max.apply(null,this.locationArrX);
+			let minX = Math.min.apply(null,this.locationArrX);
+			let maxZ = Math.max.apply(null,this.locationArrZ);
+			let minZ = Math.min.apply(null,this.locationArrZ);
+			let modeWidth = maxX-minX;
+			let modeHeight = maxZ-minZ;
+			/*
+			计算该模型的最大与最小的x,z~
+			换算的到模型平面最大面积与屏幕的面积比
+			现在是跟客户刘工（做模型）商量过，其模型的中心点会是在其旋转中心以及模型构建空间中心
+			但是导出时候会ZY翻转，则模型物理坐标是上下翻转需要调整其旋转度数为-90度
+			注：
+			对于camera的Y轴与模型最大Y轴没有进行判断，因为Y轴改变会影响到当前相机焦距，则需要优化
+			所以现在是固定焦距
+			
+
+
+			—————————————————————         Y
+		   |                     |        |
+		   |                     |        |
+		   |                     |        |
+		   |                     |Z       |
+		   |                     |        |
+		   |                     |        |
+		   |                     |        |__ __ __ __ __ __ X
+			—————————————————————        /
+					 X					/
+					 				   /
+									  /
+									 /
+									Z
+			*/
+
+		
+			let loadFov =( window.innerWidth*window.innerHeight)/(modeWidth*modeHeight)<21?21:( window.innerWidth*window.innerHeight)/(modeWidth*modeHeight);
+			if(true){
+				this._fov =5;
+			
+			}else{
+				this._fov = loadFov>30?30:loadFov;
+			}
+			
+			this.camera.fov = this._fov;  
+			this.camera.updateProjectionMatrix();  
+			console.log(maxX,minX);
+		}
+
+	}
+	var btn = document.getElementById("test");
+
+	var mode = new modeFatory();
+	mode.fatoryInit();
+	mode.flags = true;
+	mode.setTimeOutOfAnimate();
+
+	
+	mode.fatoryUrls = ['./model/shiKe/new1/m_machine.obj'];
+
+	mode.fatoryTexture = ['./img/gray.jpg'];
+
+	mode.loadObjFile();
+	
+	btn.onclick = function(){ 
+		// mode.cutterMove(1,50,2000);	
+		mode.cutterMove(2,50,2000);	 
+		// console.log(mode.numProcessing(100,20));
+		// console.log(mode.numProcessing(-100,-20));
+		// console.log(mode.numProcessing(100,-20));
+	};
+
+
+</script>
+
+</html>

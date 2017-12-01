@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<title></title>
+	</head>
+	<style type="text/css">
+		#show {
+			/*width: 500px;*/
+			/*height: 300px;*/
+			/*height: 500px;*/
+		}
+	</style>
+
+	<body>
+		<div id="show"></div>
+		<button class="addObj" onclick="addOBJ('img/grasslight-big.jpg')">增加Obj</button>
+		<button class="delObj">删除Obj</button>
+		<button class="changeTexture">换皮肤</button>
+	</body>
+	<script src="js/three.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/parser.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/webgl_detector.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/OrbitControls.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/OBJLoader.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/TrackballControls.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/Detector.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/stats.min.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript">
+		var sence = new THREE.Scene(),
+			camera, renderer;
+		var object3D = new THREE.Object3D();
+		var textObj=[];
+		var container;
+		var material = new THREE.MeshLambertMaterial({
+			color: 0xffffff,
+			overdraw: 1,
+			wireframe: false,
+			shading: THREE.FlatShading,
+			vertexColors: THREE.FaceColors
+		});
+		init();
+		animate();
+		var Tmesh = null;
+		var addObj = document.getElementsByClassName('addObj');
+		var delObj = document.getElementsByClassName('delObj');
+		var changeTexture = document.getElementsByClassName('changeTexture');
+		
+		function init() {
+			//			container = document.createElement('div');
+			container = document.getElementById('show');
+			//			document.body.appendChild(container);
+
+			//相机
+			camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+			camera.position.z = 2000;
+			camera.position.x = 100;
+
+
+			var ambient = new THREE.AmbientLight( 0x050505 );
+			sence.add( ambient );
+
+			directionalLight = new THREE.DirectionalLight( 0xffffff, 2 );
+			directionalLight.position.set( 2, 1.2, 10 ).normalize();
+			sence.add( directionalLight );
+
+			directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
+			directionalLight.position.set( -2, 1.2, -10 ).normalize();
+			sence.add( directionalLight );
+
+			pointLight = new THREE.PointLight( 0xffaa00, 2 );
+			pointLight.position.set( 2000, 1200, 10000 );
+			sence.add( pointLight );
+
+
+
+
+
+
+			//场景
+
+			sence.add(camera);
+			var loader = new THREE.OBJLoader();
+
+			var texture = new THREE.Texture();
+			
+			var textureCube = new THREE.CubeTextureLoader()
+			.setPath( 'img/')
+			.load( [ 's.jpg','s.jpg', 's.jpg',  's.jpg', 's.jpg', 's.jpg' ] );
+			
+			sence.background = textureCube;
+
+//
+//			// 加载一个资源
+//			loader.load(
+//				// 资源链接
+//				'model/combine1.obj',
+//				// 资源加载完成后的回调函数
+//				function(object) {
+//					var materialObj = new THREE.MeshBasicMaterial({
+//						color: 0x444444
+//					});
+//					object.traverse(function(child) {
+//						if(child instanceof THREE.Mesh) {
+//							//							 child.material = materialObj;
+//							child.material.map = texture;
+//						}
+//					});
+//					object.position.y = 0;
+//					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+//					object3D.add(object);
+//					textObj.push(object);
+//					sence.add(object3D);
+//				}
+//			);
+//
+//			loader.load(
+//				// 资源链接
+//				'model/fillet14.obj',
+//				// 资源加载完成后的回调函数
+//				function(object) {
+//					object.traverse(function(child) {
+//						if(child instanceof THREE.Mesh) {
+//							// child.material.map = texture;
+//							child.material.map = texture;
+//						}
+//					});
+//					object.position.y = 0;
+//					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+//						object3D.add(object);
+//					textObj.push(object);
+//					sence.add(object3D);
+//				}
+//			);
+//			loader.load(
+//				// 资源链接
+//				'model/fillet13.obj',
+//				// 资源加载完成后的回调函数
+//				function(object) {
+//					object.traverse(function(child) {
+//						if(child instanceof THREE.Mesh) {
+//							// child.material.map = texture;
+//						}
+//					});
+//					object.position.y = 0;
+//					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+//						object3D.add(object);
+//					textObj.push(object);
+//					sence.add(object3D);
+//				}
+//			);
+//			loader.load(
+//				// 资源链接
+//				'model/loft1.obj',
+//				// 资源加载完成后的回调函数
+//				function(object) {
+//					object.traverse(function(child) {
+//						if(child instanceof THREE.Mesh) {
+//							// child.material.map = texture;
+//						}
+//					});
+//					object.position.y = 0;
+//					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+//						object3D.add(object);
+//					textObj.push(object);
+//					sence.add(object3D);
+//				}
+//			);
+//
+//			loader.load(
+//				// 资源链接
+//				'model/split_line7.obj',
+//				// 资源加载完成后的回调函数
+//				function(object) {
+//					object.traverse(function(child) {
+//						if(child instanceof THREE.Mesh) {
+//							// child.material.map = texture;
+//						}
+//					});
+//					object.position.y = 0;
+//					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+//						object3D.add(object);
+//					textObj.push(object);
+//					sence.add(object3D);
+//				}
+//			);
+//
+			loader.load(
+				// 资源链接
+				'model/shiKe/chanFang2.obj',
+				// 资源加载完成后的回调函数
+				function(object) {
+					object.traverse(function(child) {
+						if(child instanceof THREE.Mesh) {
+							// child.material.map = texture;
+						}
+					});
+					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+						object3D.add(object);
+					textObj.push(object);
+					sence.add(object3D);
+				}
+			);
+//
+//			loader.load(
+//				// 资源链接
+//				'model/sweep3.obj',
+//				// 资源加载完成后的回调函数
+//				function(object) {
+//					object.traverse(function(child) {
+//						if(child instanceof THREE.Mesh) {
+//							// child.material.map = texture;
+//						}
+//					});
+//					object.position.y = 0;
+//					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+//						object3D.add(object);
+//					textObj.push(object);
+//					sence.add(object3D);
+//				}
+//			);
+//
+//			loader.load(
+//				// 资源链接
+//				'model/thicken15.obj',
+//				// 资源加载完成后的回调函数
+//				function(object) {
+//					object.traverse(function(child) {
+//						if(child instanceof THREE.Mesh) {
+//							// child.material.map = texture;
+//						}
+//					});
+//					object.position.y = 0;
+//					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+//						object3D.add(object);
+//					textObj.push(object);
+//					sence.add(object3D);
+//				}
+//			);
+
+			renderer = new THREE.WebGLRenderer();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setClearColor(0xffffff, 1);
+			var controls = new THREE.OrbitControls(camera, renderer.domElement);
+			controls.addEventListener('change', render);
+			container.appendChild(renderer.domElement);
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+
+			render();
+		}
+
+		function render() {
+			renderer.render(sence, camera);
+		}
+
+		
+		
+		function addOBJ(t){
+			var loader = new THREE.OBJLoader();
+			var texture =new THREE.TextureLoader().load('img/tt.jpg');
+			loader.load(
+				// 资源链接
+				'model/combine1.obj',
+				// 资源加载完成后的回调函数
+				function(object) {
+					console.log('object===',object);
+					for(let i = 0;i<object.children.length;i++){
+						var geometry = object.children[i].geometry;
+						 Tmesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { map: texture} ) );
+						console.log(textObj);
+						sence.add(Tmesh);
+					}
+				}
+
+			);
+
+			render();
+		}
+		
+//		delObj[0].addEventListener('click',function(){
+//			object3D.remove(textObj[7]);
+//		});
+		changeTexture[0].addEventListener('click',function(){
+			var loader = new THREE.OBJLoader();
+			var texture =new THREE.TextureLoader().load('img/ww.jpg');
+			loader.load(
+				// 资源链接
+				'model/543ae7257d2af.obj',
+				// 资源加载完成后的回调函数
+				function(object) {
+					object.traverse(function(child) {
+						if(child instanceof THREE.Mesh) {
+							// child.material.map = texture;
+							child.material.map = texture;
+						}
+					});
+					object.position.y = 0;
+					object.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+						var geometry = object.children[0].geometry;
+						var mesh = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( {  map: texture} ) );
+						console.log(textObj);
+						sence.add(mesh);
+				}
+
+			);
+
+			render();
+//		console.log(Tmesh);
+//		var texture =new THREE.TextureLoader().load('img/tt.jpg');
+//		var Cmaterial = new THREE.MeshLambertMaterial( {  map: texture} );
+//		Tmesh.material = Cmaterial;
+
+		});
+	</script>
+
+</html>

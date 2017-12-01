@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>Three</title>
+</head>
+<script src="js/three.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/OBJLoader.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/Detector.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/TrackballControls.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/UnpackDepthRGBAShader.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/ShadowMapViewer.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/OrbitControls.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/stats.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/TGALoader.js" type="text/javascript" charset="utf-8"></script>
+
+<body>
+	<select name="" id="shoes">
+	</select>
+	<select name="" id="shoesColor">
+		<option value="img/floor.png">金色</option>
+		<option value="img/grasslight-big.jpg">绿色</option>
+		<option value="img/tt.jpg">粉色</option>
+	</select>
+
+	<button id="change_btn">换材质</button>
+
+	<button id="change_bu">添加部件</button>
+
+	<!--<button id="change_del">删除部件</button>-->
+</body>
+<!--微调渲染机制-->
+<script type="x-shader/x-fragment" id="fragmentShader">
+		uniform vec3 topColor;
+		uniform vec3 bottomColor;
+		uniform float offset;
+		uniform float exponent;
+		varying vec3 vWorldPosition;
+		void main() {
+			float h = normalize( vWorldPosition + offset ).y;
+			gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), exponent ), 0.0 ) ), 1.0 );
+		}
+	</script>
+<script type="x-shader/x-vertex" id="vertexShader">
+		varying vec3 vWorldPosition;
+		void main() {
+			vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+			vWorldPosition = worldPosition.xyz;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}
+	</script>
+
+
+
+
+<script type="text/javascript">
+
+	"use strict";
+	let c = null;
+	let cur, index, cIndex = 0;
+	var scene = new THREE.Scene(),
+		camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000), renderer;
+	var spotLight;
+	var tx = 600;
+	var object3D = new THREE.Object3D();
+	var controls;
+	var objList = {};
+	var container = document.createElement('div'),
+		body = document.body;
+	var loader = new THREE.OBJLoader();
+	var btn = document.getElementById('change_btn'), btn1 = document.getElementById('change_bu'), btn2 = document.getElementById('change_del'), sel1 = document.getElementById('shoes'), sel2 = document.getElementById('shoesColor');
+	var Meshstorage = {};
+	var mouse = new THREE.Vector2();
+	var raycaster, INTERSECTED;
+	var r;
+	var loadImg = ['model/combine1.obj', 'model/fillet14.obj', 'model/fillet13.obj', 'model/loft1.obj', 'model/sweep2.obj', 'model/sweep3.obj', 'model/thicken15.obj'];
+	var lightHelper, shadowCameraHelper;
+
+	//		var objSet = new objLoad();
+	init();
+	animate();
+
+	function init() {
+		//镜头设置
+
+		camera.position.y = 50;
+		camera.position.z = 100;
+
+		//灯光设置、以及投影设置
+
+		//环境光
+		//			scene.add( new THREE.AmbientLight( 0xe4e4e4 ,1.05) );
+		scene.add(new THREE.AmbientLight(0xe4e4e4, 1.05));
+
+		spotLight = new THREE.SpotLight(0xffffff);
+		spotLight.name = 'Spot Light';
+		//			spotLight.angle = Math.PI / 5;
+		spotLight.penumbra = 0.3;
+		spotLight.position.set(0, 500, 0);
+		spotLight.castShadow = true;
+		spotLight.distance = 0;
+		spotLight.shadow.camera.near = 10;
+		spotLight.shadow.camera.far = 600;
+		spotLight.shadow.mapSize.width = 4096;
+		spotLight.shadow.mapSize.height = 4096;
+		scene.add(spotLight);
+
+		scene.add(new THREE.CameraHelper(spotLight.shadow.camera));
+
+		let textureCube = new THREE.CubeTextureLoader()
+            .setPath( 'img/')
+            .load( [ 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg' ] );
+        scene.background = textureCube;
+
+
+
+		//			辅助线设置
+		lightHelper = new THREE.SpotLightHelper(spotLight);
+		scene.add(lightHelper);
+		shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+		scene.add(shadowCameraHelper);
+
+
+
+
+
+		//地板设置
+		var texture = textureLoad('img/r.jpg');
+		var material = new THREE.MeshPhongMaterial({
+			//				map: texture,
+			specular: 0x111111,
+			shininess: 50,
+			//				color:0xffffff,
+			dithering: true
+		});
+		var geometry = new THREE.BoxGeometry(1000, 1, 1000);
+		var mesh = new THREE.Mesh(geometry, material);
+		mesh.position.set(0, - 1, 0);
+		mesh.receiveShadow = true;
+		//			scene.add( mesh );
+
+
+
+
+		//调用obj加载方法
+		//			objLoad(loadImg,'img/floor.png');
+
+
+		//射线定位，鼠标放在某个组件的时候触发该事件
+		//			raycaster = new THREE.Raycaster();
+
+
+
+		//渲染机制
+		renderer = new THREE.WebGLRenderer();
+		renderer.setClearColor(0xffffff, 1);
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		renderer.shadowMap.enabled = true;
+		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		renderer.gammaInput = true;
+		renderer.gammaOutput = true;
+
+		/***
+		 *视角插件 
+		 *maxPolarAngle 最大视角角度
+		 *autoRotate    是否旋转
+		 *noZoom        是否放大
+		 * 
+		 */
+		controls = new THREE.OrbitControls(camera, renderer.domElement);
+		controls.addEventListener('change', render);
+		controls.maxPolarAngle = $deg(60);
+		controls.autoRotate = false;
+		// enable animation loop when using damping or autorotation
+		//			controls.enableDamping = true;
+		//			controls.dampingFactor = 0.25;
+		//			controls.noZoom = true;
+
+		window.addEventListener('resize', onWindowResize, false);
+		document.addEventListener('mousemove', onDocumentMouseMove, false);
+		container.appendChild(renderer.domElement);
+		body.appendChild(container);
+	}
+	//窗口发生改变的时候
+	function onWindowResize() {
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(window.innerWidth, window.innerHeight);
+	}
+	function animate() {
+		requestAnimationFrame(animate);
+		controls.update();
+		render();
+	}
+	function onDocumentMouseMove(event) {
+		event.preventDefault();
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+	}
+
+
+	function $deg(deg) {
+		return (Math.PI / 180) * deg;
+	}
+	function render() {
+		//辅助线更新
+		//			lightHelper.update();
+		//			shadowCameraHelper.update();
+		//射线定位方法个体
+		//			raycaster.setFromCamera( mouse, camera );
+		//			var intersects = raycaster.intersectObjects( scene.children[scene.children.length-1].children);
+		////			选中
+		//			if ( intersects.length > 0 ) {
+		//
+		//					if ( INTERSECTED != intersects[ 0 ].object ) {
+		//
+		//						if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+		//						INTERSECTED = intersects[ 0 ].object;
+		//						INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+		//						INTERSECTED.material.emissive.setHex( 0xff00ff );
+		//
+		//					}
+		//
+		//				} else {
+		//
+		//					if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+		//
+		//					INTERSECTED = null;
+		//
+		//				}
+
+		//渲染重置
+		renderer.render(scene, camera);
+	}
+	function objLoad(url, tmaterial) {
+		if (url == null && tmaterial == null) {
+			return;
+		} 4
+		for (let t = 0; t < url.length; t++) {
+			loader.load(
+				// 资源链接
+				url[t],
+				// 资源加载完成后的回调函数
+				function (object) {
+					object.traverse(function (child) {
+						if (child instanceof THREE.Mesh) {
+							// child.material.map = texture;
+							var texture = textureLoad(tmaterial);
+							var material = new THREE.MeshPhongMaterial({
+								map: texture,
+								specular: 0x111111,
+								shininess: 50
+							});
+							child.material = material;
+							child.castShadow = true;
+							child.receiveShadow = false;
+							child.position.y = 20000;
+							child.position.z = -2000;
+							child.position.x = -120;
+							child.rotation.set($deg(90), $deg(90), $deg(90));
+							Meshstorage[t] = child;
+
+							object3D.add(child);
+							scene.add(object3D);
+
+
+						}
+					});
+
+
+					spotLightResetAndCameraZReset(Meshstorage);
+				}
+			);
+
+
+
+		}
+
+
+	}
+
+	objLoad.prototype.objModelAllLoad = function (url, mat) {
+		loader.load(
+			// 资源链接
+			url,
+			// 资源加载完成后的回调函数
+			function (object) {
+				object.traverse(function (child) {
+					if (child instanceof THREE.Mesh) {
+						var texture = textureLoad(mat);
+						var material = new THREE.MeshPhongMaterial({
+							map: texture,
+							specular: 0x111111,
+							shininess: 50
+						});
+						child.material = material;
+						child.castShadow = true;
+						child.position.y = -2000;
+						child.receiveShadow = false;
+						child.rotation.set($deg(-60), 0, $deg(-90));
+					}
+				});
+
+				//一个模型中有多个组件
+				for (var i = 0; i < object.children.length; i++) {
+					Meshstorage[i] = object.children[i];
+					cur += `<option value="${i}">${object.children[i].name}</option>`;
+					sel1.innerHTML = cur;
+				}
+				for (var i in Meshstorage) {
+					object3D.add(Meshstorage[i]);
+				}
+				scene.add(object3D);
+				spotLightResetAndCameraZReset(Meshstorage);
+			}
+		);
+	};
+	//		
+	//		objLoad.prototype.objModelAllLoadt = function(url,mat){
+	//			loader.load(
+	//						// 资源链接
+	//							url,
+	//							// 资源加载完成后的回调函数
+	//							function(object) {
+	//									var loader = new THREE.TGALoader();
+	//									var texture1 = loader.load( 'model/texture/Map__1_Speckle.tga' );
+	//									var material =  new THREE.MeshPhongMaterial({
+	//										map: texture1,
+	//										color:0xffffff
+	//									});
+	//									for(var i of object.children){
+	//										console.log(i);
+	//										i.material =material;
+	//									}
+	//									scene.add(object);
+	//							}
+	//						);
+	//		};
+
+
+	var a = new objLoad();
+	a.objModelAllLoad("model/shiKe/chanFang.obj", 'img/ttblack.jpg');
+	//去除模型
+	function removeObj(mesh) {
+		return object3D.remove(mesh);
+	}
+	//材质加载
+	function textureLoad(url) {
+		return new THREE.TextureLoader().load(url);
+	}
+	//修改模型
+	function editObjMaterial(mesh, imgUrl) {
+		var texture = textureLoad(imgUrl);
+		var material2 = new THREE.MeshPhongMaterial({
+			map: texture,
+			specular: 0x111111,
+			shininess: 50
+		});
+		mesh.material = material2;
+	}
+	//顶光重设,影子投影修改
+	function spotLightResetAndCameraZReset(mesh) {
+		var maxObjY = getObjMaxYLocation(mesh);
+		if (maxObjY > 140) {
+			spotLight.shadow.mapSize.width = 1024;
+			spotLight.shadow.mapSize.height = 1024;
+		} else {
+			spotLight.shadow.mapSize.width = 4096;
+			spotLight.shadow.mapSize.height = 4096;
+		}
+		camera.position.z = maxObjY * 10 > 500 ? 500 : maxObjY * 10;
+		camera.position.y = maxObjY * 5 > 500 ? 400 : maxObjY * 5;
+	}
+	//获取obj最高的模型的顶点坐标
+	function getObjMaxYLocation(mesh) {
+		var c = ObjToArr(mesh);
+		return Math.max.apply(null, c);
+	}
+	//重新计算的obj模型的顶点坐标，并且更新获取
+	function ObjToArr(obj) {
+		var arr = new Array();
+		for (var i in obj) {
+			obj[i].geometry.computeBoundingSphere();
+			console.log("ObjToArr", obj[i].geometry.computeBoundingSphere());
+			var t = obj[i].geometry.clone();
+			console.log("ObjToArr", t);
+
+			arr.push(Math.abs(~~(t.boundingSphere.center.y)));
+		}
+		return arr;
+	}
+	btn1.onclick = function () {
+		object3D.add(c);
+		scene.add(object3D);
+	};
+	btn.onclick = function () {
+		editObjMaterial(object3D.children[index], sel2.options[cIndex].value);
+	};
+	sel1.addEventListener("change", function () {
+		index = this.selectedIndex;
+	});
+	sel2.addEventListener("change", function () {
+		cIndex = this.selectedIndex;
+	});
+</script>
+<script type="text/javascript">
+</script>
+
+</html>
