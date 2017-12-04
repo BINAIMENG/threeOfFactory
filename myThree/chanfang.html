@@ -250,7 +250,6 @@
 			}
 		}
 		cutterMove(type,distance,machineLength){//切割机的刀移动
-			console.log(this.cutter,this.cutter.length);
 			let realLength = 0;
 			let proportion = distance/machineLength;
 			if(this.cutter.length<2){
@@ -261,7 +260,6 @@
 				this.cutter[type-1].beam.geometry.boundingSphere.center.x
 				realLength =this.numProcessing(this.cutter[0].beam.geometry.boundingSphere.center.x,this.cutter[1].beam.geometry.boundingSphere.center.x);
 			}
-			console.log(realLength,proportion,proportion*realLength);
 			for(let i in this.cutter){
 				this.cutter[i].beam.position.x = proportion*realLength;
 				this.cutter[i].knife.position.x = proportion*realLength;
@@ -271,8 +269,9 @@
 		}
 		mtlLoader(){//MTL材质加载器
 			let mtlLoader = new THREE.MTLLoader();
+			mtlLoader.setTexturePath('./model/shiKe/mtl/');
 			return new Promise(function(resolve,reject){
-				mtlLoader.load( 'model/shiKe/mtl/m_machine.mtl', function( materials ) {
+				mtlLoader.load( 'model/shiKe/mtl/m_factory.mtl', function( materials ) {
 					resolve(materials);				
 				});
 			})						
@@ -285,7 +284,6 @@
 				return;
 			} else {
 				for (let i in _.urlArrs) {
-					let _child = [];
 					_.mtlLoader().then(function(materials){
 						_.loader.setMaterials(materials);
 						_.loader.load(_.urlArrs[i], function (object) {
@@ -295,13 +293,13 @@
 									child.rotation.set(_.$deg(-90),0, 0);
 									child.castShadow = true;
 									child.receiveShadow = false;
-									_child.push(child);
+									if(i>=1){
+										child.position.z = i*200;
+									}
 								}
 							});
-							for (let i in _child) {
-								_.object3D.add(_child[i]);
-							}
-
+							_.object3D.add(object);
+							console.log('object3D',_.object3D,object);
 							_.cameraFovReset();
 							_.scene.add(_.object3D);
 
@@ -331,12 +329,9 @@
 			mesh.geometry.computeBoundingSphere();
 			let  t  = 	mesh.clone();
 			this.locationArrX.push(t.geometry.boundingSphere.center.x);
-			this.locationArrZ.push(t.geometry.boundingSphere.center.z);
+			this.locationArrZ.push(t.geometry.boundingSphere.center.y);
 		}
-		cameraReset(){//相机位置重置
-			if(this.camera.position.x==-2293&&this.camera.position.y==-1437&&this.camera.position.z==-2015){
-			}
-		}
+		
 		cameraFovReset(){//相机焦距（fov）调整
 			let maxX = Math.max.apply(null,this.locationArrX);
 			let minX = Math.min.apply(null,this.locationArrX);
@@ -373,7 +368,7 @@
 
 		
 			let loadFov =( window.innerWidth*window.innerHeight)/(modeWidth*modeHeight)<21?21:( window.innerWidth*window.innerHeight)/(modeWidth*modeHeight);
-			if(true){
+			if(false){
 				this._fov =5;
 			
 			}else{
@@ -382,7 +377,6 @@
 			
 			this.camera.fov = this._fov;  
 			this.camera.updateProjectionMatrix();  
-			console.log(maxX,minX);
 		}
 
 	}
@@ -394,18 +388,14 @@
 	mode.setTimeOutOfAnimate();
 
 	
-	mode.fatoryUrls = ['./model/shiKe/new1/m_machine.obj'];
+	mode.fatoryUrls = ['./model/shiKe/new1/m_factory.obj',"./model/shiKe/new1/m_machine.obj"];
 
 	mode.fatoryTexture = ['./img/gray.jpg'];
 
 	mode.loadObjFile();
 	
 	btn.onclick = function(){ 
-		// mode.cutterMove(1,50,2000);	
 		mode.cutterMove(2,50,2000);	 
-		// console.log(mode.numProcessing(100,20));
-		// console.log(mode.numProcessing(-100,-20));
-		// console.log(mode.numProcessing(100,-20));
 	};
 
 
