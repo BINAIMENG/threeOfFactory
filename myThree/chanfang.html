@@ -60,7 +60,12 @@
 			this.lightHelper;
 			this.flag = false;
 			this.urlArrs;
-			this.textureUrls;
+			this.fatoryUrls;
+			this.machineUrls;
+			this.fatoryMtlUrl;
+			this.machineMtlUrl;
+			this.mtPiclUrl;
+			this._mac={};
 			this.showPanel = document.getElementById("ShowPanel"); //获取母版
 			//定义背景、相机、渲染器
 			this.scene = new THREE.Scene();
@@ -79,41 +84,66 @@
 			//射线定位加载
 			this.raycaster = new THREE.Raycaster(), this.INTERSECTED;
 			// 坐标定位数组
-			this.locationArrX =  [];
-			this.locationArrY =  [];
-			this.locationArrZ =  [];
+			this.locationArrX = [];
+			this.locationArrY = [];
+			this.locationArrZ = [];
 			//获取刀头和横梁
 			this.knife = {};
 			this.beam = {};
-			this.cutter = []; 
+			this.cutter = [];
+		}
+		//获取和设置模型地址
+		get getFatoryUrl() { 
+			return this.fatoryUrls;
+		}
+		set setFatoryUrl(urlsArr) {
+			this.fatoryUrls = urlsArr;
 		}
 
-		get fatoryUrls() { //获取和设置模型地址
-			return this.urlArrs = urlsArr;
+		get getMachineUrl() {
+			return this.machineUrls;
 		}
-		set fatoryUrls(urlsArr) {
-			this.urlArrs = urlsArr;
+		set setMachineUrl(urlsArr) {
+			this.machineUrls = urlsArr;
 		}
+
+		get getFatoryMtlUrl() {
+			return this.fatoryMtlUrl;
+		}
+		set setFatoryMtlUrl(url) {
+			this.fatoryMtlUrl = url;
+		}
+		get getMachineMtlUrl() {
+			return this.machineMtlUrl;
+		}
+		set setMachineMtlUrl(url) {
+			this.machineMtlUrl = url;
+			
+		}
+
+		get getMtlPicUrl() {
+			return this.mtPiclUrl;
+		}
+		set setMtlPicUrl(url) {
+			this.mtPiclUrl = url;
+		}
+
 
 		set flags(flags) {
 			this.flag = flags;
 		}
 
-		get fatoryTexture() { //获取模型材质
-			return this.textureUrls;
-		}
-		set fatoryTexture(urlsArr) {//设置模型材质
-			this.textureUrls = urlsArr;
-		}
 
 		fatoryInit() {//模型初始化
-			
+
 			//绑定窗口和文档流中事件
 			this.sceneInit();
+			this.animate();
 		}
 		animate() {
 			this.controls.update();
 			this.render();
+			requestAnimationFrame(this.animate.bind(this));
 		}
 		setTimeOutOfAnimate() {
 			if (this.flag) {
@@ -133,7 +163,7 @@
 			// console.log('this.lightHelper,this.shadowCameraHelper',this.lightHelper,this.shadowCameraHelper);
 			// this.lightHelper.update();
 			// this.shadowCameraHelper.update();
-			
+
 			//射线定位方法个体
 			this.raycaster.setFromCamera(this.mouse, this.camera);
 			let intersects = this.raycaster.intersectObjects(this.scene.children[this.scene.children.length - 1].children);
@@ -144,21 +174,21 @@
 				if (this.INTERSECTED != intersects[0].object) {
 					if (this.INTERSECTED) {
 						// this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-						if(this.INTERSECTED.material.length == undefined){
+						if (this.INTERSECTED.material.length == undefined) {
 							this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-						}else{
-							this.INTERSECTED.material.forEach((element,index) => {
+						} else {
+							this.INTERSECTED.material.forEach((element, index) => {
 								element.emissive.setHex(currentHex[index]);
 							});
 						}
-						
+
 					}
 					this.INTERSECTED = intersects[0].object;
-					if(this.INTERSECTED.material.length == undefined){
+					if (this.INTERSECTED.material.length == undefined) {
 						currentHex = this.INTERSECTED.material.emissive.getHex();
 						this.INTERSECTED.material.emissive.setHex(0xff00ff);
-					}else{
-						this.INTERSECTED.material.forEach((element,index) => {
+					} else {
+						this.INTERSECTED.material.forEach((element, index) => {
 							currentHex[index] = element.emissive.getHex();
 							element.emissive.setHex(0xff00ff);
 						});
@@ -169,15 +199,15 @@
 				}
 			} else {
 
-				if (this.INTERSECTED){
-					if(this.INTERSECTED.material.length == undefined){
+				if (this.INTERSECTED) {
+					if (this.INTERSECTED.material.length == undefined) {
 						this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-					}else{
-						this.INTERSECTED.material.forEach((element,index) => {
+					} else {
+						this.INTERSECTED.material.forEach((element, index) => {
 							element.emissive.setHex(currentHex[index]);
 						});
 					}
-					
+
 				}
 				//  this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
 
@@ -198,16 +228,16 @@
 			//灯光
 			let ambient = new THREE.AmbientLight(0xffffff, 0.7);
 			this.scene.add(ambient);
-				// 点光源
-			let spotLight = new THREE.SpotLight( 0xfefefe, 0.45 );
-			this.camera.add( spotLight );
+			// 点光源
+			let spotLight = new THREE.SpotLight(0xfefefe, 0.45);
+			this.camera.add(spotLight);
 			//场景
 			this.scene.add(this.camera);
-			
+
 			//辅助线设置
-		    this.lightHelper = new THREE.SpotLightHelper(spotLight);
+			this.lightHelper = new THREE.SpotLightHelper(spotLight);
 			// this.scene.add(this.lightHelper);
-		   	this.shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+			this.shadowCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
 			// this.scene.add(this.shadowCameraHelper);
 
 			this.renderer.setClearColor(0xffffff, 1);
@@ -218,7 +248,7 @@
 			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 			this.renderer.gammaInput = true;
 			this.renderer.gammaOutput = true;
-			
+
 			/***
 			 *视角插件 
 			 *maxPolarAngle 最大视角角度
@@ -234,7 +264,7 @@
 			window.addEventListener('resize', this.onWindowResize.bind(this), false);
 			document.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
 			this.showPanel.appendChild(this.renderer.domElement);
-			this.render(); 
+			this.render();
 
 		}
 		onDocumentMouseMove(e) {//鼠标移动目标
@@ -242,103 +272,116 @@
 			this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
 			this.mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
 		}
-		numProcessing(num1,num2){//数字比较
-			if((/^\-\d+\.?\d*$/.test(num1)&&/^\-\d+\.?\d*$/.test(num2))||( /^\d+$/.test(num1)&&/^\d+$/.test(num2))){
-				return Math.abs(Math.abs(num1)- Math.abs(num2));
-			}else{
-				return Math.abs(num1-num2);
+		numProcessing(num1, num2) {//数字比较
+			if ((/^\-\d+\.?\d*$/.test(num1) && /^\-\d+\.?\d*$/.test(num2)) || (/^\d+$/.test(num1) && /^\d+$/.test(num2))) {
+				return Math.abs(Math.abs(num1) - Math.abs(num2));
+			} else {
+				return Math.abs(num1 - num2);
 			}
 		}
-		cutterMove(type,distance,machineLength){//切割机的刀移动
+		cutterMove(type, distance, machineLength) {//切割机的刀移动
 			let realLength = 0;
-			let proportion = distance/machineLength;
-			if(this.cutter.length<2){
-				let maxX = Math.max.apply(null,this.locationArrX);
-				let minX = Math.min.apply(null,this.locationArrX);
-				realLength =this.numProcessing(maxX,minX);
-			}else{
-				this.cutter[type-1].beam.geometry.boundingSphere.center.x
-				realLength =this.numProcessing(this.cutter[0].beam.geometry.boundingSphere.center.x,this.cutter[1].beam.geometry.boundingSphere.center.x);
+			let proportion = distance / machineLength;
+			if (this.cutter.length < 2) {
+				let maxX = Math.max.apply(null, this.locationArrX);
+				let minX = Math.min.apply(null, this.locationArrX);
+				realLength = this.numProcessing(maxX, minX);
+			} else {
+				this.cutter[type - 1].beam.geometry.boundingSphere.center.x
+				realLength = this.numProcessing(this.cutter[0].beam.geometry.boundingSphere.center.x, this.cutter[1].beam.geometry.boundingSphere.center.x);
 			}
-			for(let i in this.cutter){
-				this.cutter[i].beam.position.x = proportion*realLength;
-				this.cutter[i].knife.position.x = proportion*realLength;
-				this.cutter[i].knife.position.z = proportion*realLength;
+			for (let i in this.cutter) {
+				this.cutter[i].beam.position.x = proportion * realLength;
+				this.cutter[i].knife.position.x = proportion * realLength;
+				this.cutter[i].knife.position.z = proportion * realLength;
 			}
 			// this.cutter[(type-1)].beam.position.x = distance;
 		}
-		mtlLoader(){//MTL材质加载器
+		mtlLoader(type) {//MTL材质加载器
 			let mtlLoader = new THREE.MTLLoader();
-			mtlLoader.setTexturePath('./model/shiKe/mtl/');
-			return new Promise(function(resolve,reject){
-				mtlLoader.load( 'model/shiKe/mtl/m_factory.mtl', function( materials ) {
-					resolve(materials);				
+			let _ = this;
+
+			var onProgress = function (xhr) {
+				if (xhr.lengthComputable) {
+					var percentComplete = xhr.loaded / xhr.total * 100;
+					console.log(Math.round(percentComplete, 2) + '% downloaded');
+				}
+			};
+			// './model/shiKe/mtl/'
+			mtlLoader.setTexturePath(_.mtPiclUrl);
+			
+			// 'model/shiKe/mtl/m_factory.mtl'
+			return new Promise(function (resolve, reject) {
+				mtlLoader.load(type=='fatory'?_.fatoryMtlUrl:_.machineMtlUrl, function (materials) {
+					resolve(materials);
+					
 				});
-			})						
+			});
 		}
 
+	
 
-		loadObjFile() {//加载obj文件
+		loadObjFile(type, materials) {//加载obj文件
 			let _ = this;
-			if (this.urlArrs.length == 0) {
-				return;
-			} else {
-				for (let i in _.urlArrs) {
-					_.mtlLoader().then(function(materials){
+			let urls = type=='fatory'?this.fatoryUrls:this.machineUrls;
+			if(!urls){
+				return false;
+			}
+			for (let i in urls) {
+				// _.mtlLoader(type).then(function (materials) {
+
+						console.log('object3D', _.object3D, materials);
+					
 						_.loader.setMaterials(materials);
-						_.loader.load(_.urlArrs[i], function (object) {
-							object.traverse(function (child) {
-								if (child instanceof THREE.Mesh) {
-									_.Sorting(child);
-									child.rotation.set(_.$deg(-90),0, 0);
-									child.castShadow = true;
-									child.receiveShadow = false;
-									if(i>=1){
-										child.position.z = i*200;
-									}
-								}
-							});
-							_.object3D.add(object);
-							console.log('object3D',_.object3D,object);
-							_.cameraFovReset();
-							_.scene.add(_.object3D);
+						_.loader.load(urls[i], function (object) {
+						object.traverse(function (child) {
+							if (child instanceof THREE.Mesh) {
+								_.Sorting(child);
+								child.rotation.set(_.$deg(-90), 0, 0);
+								child.castShadow = true;
+								child.receiveShadow = false;
+							}
+						});
+						_.object3D.add(object);
+						_.cameraFovReset();
+						_.scene.add(_.object3D);
 
 						});
-					});
-				}
+				
+				// });
 			}
 
-		} 
+		}
 
-		Sorting(mesh){//整合所有模型的xz的组合和获取横梁、刀头
-			if(mesh.name.indexOf("beam")>0){
-				let num = ~~(mesh.name.replace(/[^0-9]/ig,""));
+		Sorting(mesh) {//整合所有模型的xz的组合和获取横梁、刀头
+			if (mesh.name.indexOf("beam") > 0) {
+				let num = ~~(mesh.name.replace(/[^0-9]/ig, ""));
 				this.beam[num] = mesh;
-			}else if(mesh.name.indexOf("knife")>0){
-				let num = ~~(mesh.name.replace(/[^0-9]/ig,""));
+			} else if (mesh.name.indexOf("knife") > 0) {
+				let num = ~~(mesh.name.replace(/[^0-9]/ig, ""));
 				this.knife[num] = mesh;
 			}
-			for(let i in this.beam){
+			for (let i in this.beam) {
 				let mode = {};
 				mode['knife'] = this.knife[i];
 				mode['beam'] = this.beam[i];
-				this.cutter[i-1] = mode;		
+				this.cutter[i - 1] = mode;
 			}
 
 
 			mesh.geometry.computeBoundingSphere();
-			let  t  = 	mesh.clone();
+			let t = mesh.clone();
 			this.locationArrX.push(t.geometry.boundingSphere.center.x);
 			this.locationArrZ.push(t.geometry.boundingSphere.center.y);
 		}
-		
-		cameraFovReset(){//相机焦距（fov）调整
-			let maxX = Math.max.apply(null,this.locationArrX);
-			let minX = Math.min.apply(null,this.locationArrX);
-			let maxZ = Math.max.apply(null,this.locationArrZ);
-			let minZ = Math.min.apply(null,this.locationArrZ);
-			let modeWidth = maxX-minX;
-			let modeHeight = maxZ-minZ;
+
+		cameraFovReset() {//相机焦距（fov）调整
+			let maxX = Math.max.apply(null, this.locationArrX);
+			let minX = Math.min.apply(null, this.locationArrX);
+			let maxZ = Math.max.apply(null, this.locationArrZ);
+			let minZ = Math.min.apply(null, this.locationArrZ);
+			let modeWidth = maxX - minX;
+			let modeHeight = maxZ - minZ;
 			/*
 			计算该模型的最大与最小的x,z~
 			换算的到模型平面最大面积与屏幕的面积比
@@ -366,36 +409,75 @@
 									Z
 			*/
 
-		
-			let loadFov =( window.innerWidth*window.innerHeight)/(modeWidth*modeHeight)<21?21:( window.innerWidth*window.innerHeight)/(modeWidth*modeHeight);
-			if(false){
-				this._fov =5;
-			
-			}else{
-				this._fov = loadFov>30?30:loadFov;
+
+			let loadFov = (window.innerWidth * window.innerHeight) / (modeWidth * modeHeight) < 21 ? 21 : (window.innerWidth * window.innerHeight) / (modeWidth * modeHeight);
+			if (false) {
+				this._fov = 5;
+
+			} else {
+				this._fov = loadFov > 30 ? 30 : loadFov;
 			}
-			
-			this.camera.fov = this._fov;  
-			this.camera.updateProjectionMatrix();  
+
+			this.camera.fov = this._fov;
+			this.camera.updateProjectionMatrix();
 		}
 
 	}
 	var btn = document.getElementById("test");
 
 	var mode = new modeFatory();
+
+	
 	mode.fatoryInit();
 	mode.flags = true;
-	mode.setTimeOutOfAnimate();
+	mode.setMtlPicUrl='./model/shiKe/mtl/';
 
+	mode.setFatoryMtlUrl = './model/shiKe/mtl/m_factory.mtl';
+	mode.setFatoryUrl = ['./model/shiKe/new1/m_factory.obj'];
+
+
+	mode.setMachineMtlUrl = './model/shiKe/mtl/m_machine.mtl';
+	mode.setMachineUrl = ['./model/shiKe/new1/m_machine.obj'];
+
+
+
+
+
+	mode.mtlLoader('fatory').then(function(material){
+		console.log('fatory',material);
+		
+		mode._mac['fatory'] = material;
+		console.log('fatory', mode._mac);
+		mode.loadObjFile('fatory', mode._mac['fatory'] );
+		
+	});
+	setTimeout(() => {
+			mode.mtlLoader('machine').then(function (material) {
+			console.log('machine', material);
+			mode._mac['machine'] = material;
+			console.log('machine', mode._mac);
+
+			mode.loadObjFile('machine', mode._mac['machine']);
+		});
+
+	}, 1000);
+
+
+	// mode.loadObjFile('machine', mode._mac['machine'] );
+	// mode.loadObjFile('fatory', mode._mac['fatory'] );
 	
-	mode.fatoryUrls = ['./model/shiKe/new1/m_factory.obj',"./model/shiKe/new1/m_machine.obj"];
 
-	mode.fatoryTexture = ['./img/gray.jpg'];
 
-	mode.loadObjFile();
+
+
+	// mode.loadObjFile('machine');
+	// mode.loadObjFile('fatory');
 	
-	btn.onclick = function(){ 
-		mode.cutterMove(2,50,2000);	 
+
+
+
+	btn.onclick = function () {
+		mode.cutterMove(2, 50, 2000);
 	};
 
 
