@@ -308,6 +308,7 @@
 				}
 			};
 			// './model/shiKe/mtl/'
+			console.log(_.mtPiclUrl)
 			mtlLoader.setTexturePath(_.mtPiclUrl);
 			
 			// 'model/shiKe/mtl/m_factory.mtl'
@@ -321,7 +322,7 @@
 
 	
 
-		loadObjFile(type, materials) {//加载obj文件
+		loadObjFile(type, materials,position) {//加载obj文件
 			let _ = this;
 			let urls = type=='fatory'?this.fatoryUrls:this.machineUrls;
 			if(!urls){
@@ -342,6 +343,15 @@
 								child.receiveShadow = false;
 							}
 						});
+						if(type != 'fatory'){
+							if(!position){
+								position = {x:0,y:0,z:0}
+							}
+							object.position.x = position.x;
+							object.position.y = position.y;
+							object.position.z = position.z;
+						}
+						console.log('object',object);
 						_.object3D.add(object);
 						_.cameraFovReset();
 						_.scene.add(_.object3D);
@@ -429,7 +439,6 @@
 
 	
 	mode.fatoryInit();
-	mode.flags = true;
 	mode.setMtlPicUrl='./model/shiKe/mtl/';
 
 	mode.setFatoryMtlUrl = './model/shiKe/mtl/m_factory.mtl';
@@ -457,10 +466,21 @@
 			mode._mac['machine'] = material;
 			console.log('machine', mode._mac);
 
-			mode.loadObjFile('machine', mode._mac['machine']);
+			mode.loadObjFile('machine', mode._mac['machine'],{x:200,y:50,z:60});
 		});
 
 	}, 1000);
+	setTimeout(() => {
+			mode.mtlLoader('machine').then(function (material) {
+				console.log('machine', material);
+				mode._mac['machine'] = material;
+				console.log('machine', mode._mac);
+
+				mode.loadObjFile('machine', mode._mac['machine'], { x:300, y: 50, z: 200 });
+			});
+
+		}, 2000);
+
 
 
 	// mode.loadObjFile('machine', mode._mac['machine'] );
