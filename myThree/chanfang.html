@@ -55,7 +55,10 @@
 	"use strict";
 	class modeFatory {
 
-		constructor() {//先
+		constructor() {
+			//测试
+			this.txtChild;
+			//构造函数
 			this.shadowCameraHelper;
 			this.lightHelper;
 			this.flag = false;
@@ -159,60 +162,69 @@
 
 		}
 		render() {//渲染
+			let _ =this;
 			//辅助线更新
 			// console.log('this.lightHelper,this.shadowCameraHelper',this.lightHelper,this.shadowCameraHelper);
 			// this.lightHelper.update();
 			// this.shadowCameraHelper.update();
 
 			//射线定位方法个体
-			this.raycaster.setFromCamera(this.mouse, this.camera);
-			let intersects = this.raycaster.intersectObjects(this.scene.children[this.scene.children.length - 1].children);
-			//			选中
-			let currentHex = {};
-			if (intersects.length > 0) {
+			// this.raycaster.setFromCamera(this.mouse, this.camera);
+			// let intersects = this.raycaster.intersectObjects(this.scene.children[this.scene.children.length-1].children);
+			// // console.log(intersects);
+			
+			// // console.log("intersects",intersects, this.scene.children);
+			// //选中
+			// let currentHex = {};
+			// if (intersects.length > 0) {
 
-				if (this.INTERSECTED != intersects[0].object) {
-					if (this.INTERSECTED) {
-						// this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-						if (this.INTERSECTED.material.length == undefined) {
-							this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-						} else {
-							this.INTERSECTED.material.forEach((element, index) => {
-								element.emissive.setHex(currentHex[index]);
-							});
-						}
+			// 	if (this.INTERSECTEDINTERSECTED != intersects[0].object) {
+			// 		if (this.INTERSECTED) {
+			// 			// this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+			// 			if (this.INTERSECTED.material.length == undefined) {
+			// 				this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+			// 			} else {
+			// 				this.INTERSECTED.material.forEach((element, index) => {
+			// 					element.emissive.setHex(currentHex[index]);
+			// 				});
+			// 			}
 
-					}
-					this.INTERSECTED = intersects[0].object;
-					if (this.INTERSECTED.material.length == undefined) {
-						currentHex = this.INTERSECTED.material.emissive.getHex();
-						this.INTERSECTED.material.emissive.setHex(0xff00ff);
-					} else {
-						this.INTERSECTED.material.forEach((element, index) => {
-							currentHex[index] = element.emissive.getHex();
-							element.emissive.setHex(0xff00ff);
-						});
-					}
-					// currentHex = this.INTERSECTED.material.emissive.getHex();
-					// this.INTERSECTED.material.emissive.setHex(0xff00ff);
-					// 选中机器
-				}
-			} else {
+			// 		}
+			// 		this.INTERSECTED = intersects[0].object;
+			// 		console.log('INTERSECTED',this.INTERSECTED.name);
+			// 		if(this.INTERSECTED.Ctype == "machine"){
+			// 			if (this.INTERSECTED.material.length == undefined) {
+			// 				currentHex = this.INTERSECTED.material.emissive.getHex();
+			// 				this.INTERSECTED.material.emissive.setHex(0xff00ff);
+			// 			} else {
+			// 				this.INTERSECTED.material.forEach((element, index) => {
+			// 					currentHex[index] = element.emissive.getHex();
+			// 					// console.log('element',element)
+			// 					element.emissive.setHex(0xff00ff);
+			// 				});
+			// 			}
+			// 		}
+				
+			// 		// currentHex = this.INTERSECTED.material.emissive.getHex();
+			// 		// this.INTERSECTED.material.emissive.setHex(0xff00ff);
+			// 		// 选中机器
+			// 	}
+			// } else {
 
-				if (this.INTERSECTED) {
-					if (this.INTERSECTED.material.length == undefined) {
-						this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-					} else {
-						this.INTERSECTED.material.forEach((element, index) => {
-							element.emissive.setHex(currentHex[index]);
-						});
-					}
+			// 	if (this.INTERSECTED) {
+			// 		if (this.INTERSECTED.material.length == undefined) {
+			// 			this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+			// 		} else {
+			// 			this.INTERSECTED.material.forEach((element, index) => {
+			// 				element.emissive.setHex(currentHex[index]);
+			// 			});
+			// 		}
 
-				}
-				//  this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+			// 	}
+			// 	//  this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
 
-				this.INTERSECTED = null;
-			}
+			// 	this.INTERSECTED = null;
+			// }
 
 			//渲染重置
 
@@ -234,6 +246,9 @@
 			//场景
 			this.scene.add(this.camera);
 
+
+			var axesHelper = new THREE.AxesHelper(2000);
+			this.scene.add(axesHelper);
 			//辅助线设置
 			this.lightHelper = new THREE.SpotLightHelper(spotLight);
 			// this.scene.add(this.lightHelper);
@@ -313,9 +328,8 @@
 			
 			// 'model/shiKe/mtl/m_factory.mtl'
 			return new Promise(function (resolve, reject) {
-				mtlLoader.load(type=='fatory'?_.fatoryMtlUrl:_.machineMtlUrl, function (materials) {
+				mtlLoader.load(type=='factory'?_.fatoryMtlUrl:_.machineMtlUrl, function (materials) {
 					resolve(materials);
-					
 				});
 			});
 		}
@@ -324,7 +338,8 @@
 
 		loadObjFile(type, materials,position) {//加载obj文件
 			let _ = this;
-			let urls = type=='fatory'?this.fatoryUrls:this.machineUrls;
+			let _child = [];
+			let urls = type=='factory'?this.fatoryUrls:this.machineUrls;
 			if(!urls){
 				return false;
 			}
@@ -338,21 +353,40 @@
 						object.traverse(function (child) {
 							if (child instanceof THREE.Mesh) {
 								_.Sorting(child);
-								child.rotation.set(_.$deg(-90), 0, 0);
-								child.castShadow = true;
+								
+								child.castShadow = true; 
 								child.receiveShadow = false;
 							}
-						});
-						if(type != 'fatory'){
-							if(!position){
-								position = {x:0,y:0,z:0}
+							child.Ctype = type;
+
+							if (type != 'factory') {
+								if (!position) {
+									position = { x: 0, y: 0, z: 0 }
+								}
+								child.rotation.set(_.$deg(-90), 0, _.$deg(-10));
+								child.position.x = position.x;
+								child.position.y = position.y;
+								child.position.z = position.z;
+							} else{
+								child.rotation.set(_.$deg(-90), 0, 0);
 							}
-							object.position.x = position.x;
-							object.position.y = position.y;
-							object.position.z = position.z;
-						}
+							_child.push(child);
+						});
+						object.type = type;
+						// if(type != 'factory'){
+						// 	if(!position){
+						// 		position = {x:0,y:0,z:0}
+						// 	}
+						// 	object.position.x = position.x;
+						// 	object.position.y = position.y;
+						// 	object.position.z = position.z;
+						// } 
+						_child.forEach(element => {
+							_.object3D.add(element);
+						});
+							
 						console.log('object',object);
-						_.object3D.add(object);
+						// _.object3D.add(object);
 						_.cameraFovReset();
 						_.scene.add(_.object3D);
 
@@ -452,12 +486,13 @@
 
 
 
-	mode.mtlLoader('fatory').then(function(material){
-		console.log('fatory',material);
+
+	mode.mtlLoader('factory').then(function(material){
+		console.log('factory',material);
 		
-		mode._mac['fatory'] = material;
-		console.log('fatory', mode._mac);
-		mode.loadObjFile('fatory', mode._mac['fatory'] );
+		mode._mac['factory'] = material;
+		console.log('factory', mode._mac);
+		mode.loadObjFile('factory', mode._mac['factory'] );
 		
 	});
 	setTimeout(() => {
@@ -466,32 +501,32 @@
 			mode._mac['machine'] = material;
 			console.log('machine', mode._mac);
 
-			mode.loadObjFile('machine', mode._mac['machine'],{x:200,y:50,z:60});
+			mode.loadObjFile('machine', mode._mac['machine'],{x:120,y:0,z:200});
 		});
 
 	}, 1000);
-	setTimeout(() => {
-			mode.mtlLoader('machine').then(function (material) {
-				console.log('machine', material);
-				mode._mac['machine'] = material;
-				console.log('machine', mode._mac);
+	// setTimeout(() => {
+	// 		mode.mtlLoader('machine').then(function (material) {
+	// 			console.log('machine', material);
+	// 			mode._mac['machine'] = material;
+	// 			console.log('machine', mode._mac);
 
-				mode.loadObjFile('machine', mode._mac['machine'], { x:300, y: 50, z: 200 });
-			});
+	// 			mode.loadObjFile('machine', mode._mac['machine'], { x:500, y: 50, z: 500 });
+	// 		});
 
-		}, 2000);
+	// 	}, 2000);
 
 
 
 	// mode.loadObjFile('machine', mode._mac['machine'] );
-	// mode.loadObjFile('fatory', mode._mac['fatory'] );
+	// mode.loadObjFile('factory', mode._mac['factory'] );
 	
 
 
 
 
 	// mode.loadObjFile('machine');
-	// mode.loadObjFile('fatory');
+	// mode.loadObjFile('factory');
 	
 
 
