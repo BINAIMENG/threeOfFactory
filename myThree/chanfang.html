@@ -256,7 +256,7 @@
 			// this.scene.add(this.shadowCameraHelper);
 
 			this.renderer.setClearColor(0xffffff, 1);
-			this.renderer.setPixelRatio(window.devicePixelRatio);
+			// this.renderer.setPixelRatio(window.devicePixelRatio);
 			this.renderer.setSize(window.innerWidth, window.innerHeight);
 			//物体影子开关
 			this.renderer.shadowMap.enabled = true;
@@ -363,12 +363,13 @@
 								if (!position) {
 									position = { x: 0, y: 0, z: 0 }
 								}
-								child.rotation.set(_.$deg(-90), 0, _.$deg(-10));
-								child.position.x = position.x;
+								// child.rotation.set(_.$deg(-90), 0, _.$deg(-10));
+								child.rotation.set(_.$deg(0), 0, _.$deg(180));
+								child.position.x = -position.x;
 								child.position.y = position.y;
 								child.position.z = position.z;
 							} else{
-								child.rotation.set(_.$deg(-90), 0, 0);
+								child.rotation.set(_.$deg(0), 0, _.$deg(-180));
 							}
 							_child.push(child);
 						});
@@ -430,7 +431,7 @@
 			计算该模型的最大与最小的x,z~
 			换算的到模型平面最大面积与屏幕的面积比
 			现在是跟客户刘工（做模型）商量过，其模型的中心点会是在其旋转中心以及模型构建空间中心
-			但是导出时候会ZY翻转，则模型物理坐标是上下翻转需要调整其旋转度数为-90度
+			但是导出时候不会ZY翻转，但是3dmax中位置
 			注：
 			对于camera的Y轴与模型最大Y轴没有进行判断，因为Y轴改变会影响到当前相机焦距，则需要优化
 			所以现在是固定焦距
@@ -475,33 +476,34 @@
 	mode.fatoryInit();
 	mode.setMtlPicUrl='./model/shiKe/mtl/';
 
-	mode.setFatoryMtlUrl = './model/shiKe/mtl/m_factory.mtl';
+	mode.setFatoryMtlUrl = './model/shiKe/mtl/.mtl';
 	mode.setFatoryUrl = ['./model/shiKe/new1/m_factory.obj'];
 
 
-	mode.setMachineMtlUrl = './model/shiKe/mtl/m_machine.mtl';
-	mode.setMachineUrl = ['./model/shiKe/new1/m_machine.obj'];
+	mode.setMachineMtlUrl = './model/shiKe/mtl/m_machine(4).mtl';
+	mode.setMachineUrl = ['./model/shiKe/new1/m_machine(5).obj'];
 
 
 
 
 
 
-	mode.mtlLoader('factory').then(function(material){
-		console.log('factory',material);
+	// mode.mtlLoader('factory').then(function(material){
+	// 	console.log('factory',material);
 		
-		mode._mac['factory'] = material;
-		console.log('factory', mode._mac);
-		mode.loadObjFile('factory', mode._mac['factory'] );
+	// 	mode._mac['factory'] = material;
+	// 	console.log('factory', mode._mac);
+	// 	mode.loadObjFile('factory', mode._mac['factory'] );
 		
-	});
+	// });
 	setTimeout(() => {
 			mode.mtlLoader('machine').then(function (material) {
 			console.log('machine', material);
 			mode._mac['machine'] = material;
 			console.log('machine', mode._mac);
 
-			mode.loadObjFile('machine', mode._mac['machine'],{x:120,y:0,z:200});
+			mode.loadObjFile('machine', mode._mac['machine'],{x:0,y:0,z:0});
+			// mode.loadObjFile('machine', mode._mac['machine'],{x:0,y:0,z:0});
 		});
 
 	}, 1000);
@@ -532,7 +534,13 @@
 
 
 	btn.onclick = function () {
-		mode.cutterMove(2, 50, 2000);
+		console.log(mode.object3D);
+		for(let i in mode.object3D.children){
+			if(mode.object3D.children[i].name=='m_beam1'){
+				mode.object3D.children[i].position.x +=-200;
+				console.log(mode.object3D.children[i].position.x)
+			}
+		}
 	};
 
 
