@@ -86,6 +86,7 @@
 
 		camera.position.y = 50;
 		camera.position.z = 100;
+		camera.up.set(0,0,1);
 
 		//灯光设置、以及投影设置
 
@@ -107,6 +108,8 @@
 		scene.add(spotLight);
 
 		scene.add(new THREE.CameraHelper(spotLight.shadow.camera));
+		var axesHelper = new THREE.AxesHelper(5);
+		scene.add(axesHelper);
 
 		let textureCube = new THREE.CubeTextureLoader()
             .setPath( 'img/')

@@ -8,7 +8,6 @@
 	<!--<script src="js/three.min.js" type="text/javascript" charset="utf-8"></script>-->
 	<script src="js/OBJLoader.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/Detector.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/TrackballControls.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/OrbitControls.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/stats.min.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/MTLLoader.js" type="text/javascript" charset="utf-8"></script>
@@ -236,8 +235,11 @@
 			return (Math.PI / 180) * deg;
 		}
 		sceneInit() { //场景初始化
-			this.camera.position.y = 3500;
-			this.camera.position.z = -10;
+			
+			this.camera.position.set(-10, 0, 3500);
+			this.camera.up.set(0, 0, 1);
+			console.log(this.camera);
+
 			//灯光
 			let ambient = new THREE.AmbientLight(0xffffff, 0.7);
 			this.scene.add(ambient);
@@ -272,9 +274,17 @@
 			 *noZoom        是否放大
 			 * 
 			 */
-			this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+
+
+
+
+			this.controls = new THREE.OrbitControls(this.camera);
 			this.controls.addEventListener('change', this.render.bind(this));
-			//this.controls.maxPolarAngle = this.$deg(60);
+			this.controls.reset();
+
+
+
+			// this.controls.maxPolarAngle = this.$deg(60);
 			//this.controls.autoRotate = false;
 
 			window.addEventListener('resize', this.onWindowResize.bind(this), false);
@@ -285,8 +295,8 @@
 		}
 		onDocumentMouseMove(e) {//鼠标移动目标
 			e.preventDefault();
-			this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-			this.mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
+			this.mouse.x = -(e.clientX / window.innerWidth) * 2 - 1;
+			this.mouse.y =(e.clientY / window.innerHeight) * 2 + 1;
 		}
 		numProcessing(num1, num2) {//数字比较
 			if ((/^\-\d+\.?\d*$/.test(num1) && /^\-\d+\.?\d*$/.test(num2)) || (/^\d+$/.test(num1) && /^\d+$/.test(num2))) {
@@ -309,25 +319,39 @@
 			for (let i in this.cutter) {
 				this.cutter[i].beam.position.x = proportion * realLength;
 				this.cutter[i].knife.position.x = proportion * realLength;
+				
 				this.cutter[i].knife.position.z = proportion * realLength;
 			}
 			// this.cutter[(type-1)].beam.position.x = distance;
+		}
+		cutterMove2(type, distance, machineLength) {//切割机的刀移动
+			let realLength = 0;
+			let proportion = distance / machineLength;
+			if (this.cutter.length < 2) {
+				let maxX = Math.max.apply(null, this.locationArrX);
+				let minX = Math.min.apply(null, this.locationArrX);
+				realLength = this.numProcessing(maxX, minX);
+			} else {
+				this.cutter[type - 1].beam.geometry.boundingSphere.center.x
+				realLength = this.numProcessing(this.cutter[0].beam.geometry.boundingSphere.center.x, this.cutter[1].beam.geometry.boundingSphere.center.x);
+			}
+			for (let i in this.cutter) {
+				this.cutter[i].beam.position.x = proportion * realLength;
+				this.cutter[i].knife.position.x = proportion * realLength;
+				this.cutter[i].knife.position.z = proportion * realLength;
+			}
 		}
 		mtlLoader(type) {//MTL材质加载器
 			let mtlLoader = new THREE.MTLLoader();
 			let _ = this;
 
-			var onProgress = function (xhr) {
-				if (xhr.lengthComputable) {
-					var percentComplete = xhr.loaded / xhr.total * 100;
-					console.log(Math.round(percentComplete, 2) + '% downloaded');
-				}
-			};
-			// './model/shiKe/mtl/'
-			console.log(_.mtPiclUrl)
+			// let onProgress = function (xhr) {
+			// 	if (xhr.lengthComputable) {
+			// 		var percentComplete = xhr.loaded / xhr.total * 100;
+			// 		console.log(Math.round(percentComplete, 2) + '% downloaded');
+			// 	}
+			// };
 			mtlLoader.setTexturePath(_.mtPiclUrl);
-
-			// 'model/shiKe/mtl/m_factory.mtl'
 			return new Promise(function (resolve, reject) {
 				mtlLoader.load(type == 'factory' ? _.fatoryMtlUrl : _.machineMtlUrl, function (materials) {
 					resolve(materials);
@@ -355,18 +379,18 @@
 						}
 						child.Ctype = type;
 						if (_.moveMode) {
-							_.Sorting(child);
+							// _.Sorting(child);
 						}
 						if (type != 'factory') {
 							if (!position) {
 								position = { x: 0, y: 0, z: 0 };
 							}
-							child.rotation.set(_.$deg(-90), 0, _.$deg(180 + deg || 0));
+							child.rotation.set(_.$deg(0), 0, _.$deg(0 + deg || 0));
 							child.position.x = -position.x;
 							child.position.y = position.y;
 							child.position.z = position.z;
 						} else {
-							child.rotation.set(_.$deg(-90), 0, _.$deg(-180));
+							child.rotation.set(_.$deg(0), 0, _.$deg(0));
 						}
 						_child.push(child);
 					});
@@ -378,7 +402,6 @@
 					_.scene.add(_.object3D);
 				});
 
-				// });
 			}
 
 		}
@@ -402,7 +425,8 @@
 			mesh.geometry.computeBoundingSphere();
 			let t = mesh.clone();
 			this.locationArrX.push(t.geometry.boundingSphere.center.x);
-			this.locationArrZ.push(t.geometry.boundingSphere.center.y);
+			this.locationArrZ.push(t.geometry.boundingSphere.center.z);
+			this.locationArry.push(t.geometry.boundingSphere.center.y);
 		}
 
 		cameraFovReset() {//相机焦距（fov）调整
@@ -416,7 +440,8 @@
 			计算该模型的最大与最小的x,z~
 			换算的到模型平面最大面积与屏幕的面积比
 			现在是跟客户刘工（做模型）商量过，其模型的中心点会是在其旋转中心以及模型构建空间中心
-			但是导出时候不会ZY翻转，但是3dmax中位置
+			但是导出时候不会ZY翻转，但是3dmax中位置是与浏览器中位置坐标系不同,
+			3dmax中为Z向上,浏览器中是y向上
 			注：
 			对于camera的Y轴与模型最大Y轴没有进行判断，因为Y轴改变会影响到当前相机焦距，则需要优化
 			所以现在是固定焦距
@@ -469,14 +494,14 @@
 	mode.setMachineUrl = ['./model/shiKe/new1/m_machine.obj'];
 
 
-	mode.moveMode = true;
+	mode.moveMode = false;
 
 
 
-	// mode.mtlLoader('factory').then(function (material) {
-	// 	mode._mac['factory'] = material;
-	// 	mode.loadObjFile('factory', mode._mac['factory']);
-	// });
+	mode.mtlLoader('factory').then(function (material) {
+		mode._mac['factory'] = material;
+		mode.loadObjFile('factory', mode._mac['factory']);
+	});
 	setTimeout(() => {
 		mode.mtlLoader('machine').then(function (material) {
 			mode._mac['machine'] = material;
