@@ -58,27 +58,26 @@
 		constructor() {
 			//测试
 			this.txtChild;
+			//是否开启切割机移动模式
+			this.moveMode = false;
 			//构造函数
-			this.shadowCameraHelper;
-			this.lightHelper;
+			this.shadowCameraHelper;//灯影子辅助线
+			this.lightHelper;//光线辅助线
 			this.flag = false;
-			this.urlArrs;
-			this.fatoryUrls;
-			this.machineUrls;
-			this.fatoryMtlUrl;
-			this.machineMtlUrl;
-			this.mtPiclUrl;
-			this._mac={};
+			this.fatoryUrls;//厂房模型地址
+			this.fatoryMtlUrl;//厂房模型材质文件地址
+			this.machineUrls;//切割机模型地址
+			this.machineMtlUrl;//切割机模型地址
+			this.mtPiclUrl;//材质图片地址
+			this._mac = {};
 			this.showPanel = document.getElementById("ShowPanel"); //获取母版
 			//定义背景、相机、渲染器
 			this.scene = new THREE.Scene();
-			this._fov = 35;
+			this._fov = 35;//焦距
 			this.camera = new THREE.PerspectiveCamera(this._fov, window.innerWidth / window.innerHeight, 1, 5000);
 			this.renderer = new THREE.WebGLRenderer();
-			this.object3D = new THREE.Object3D();
-			this.texture = new THREE.TextureLoader(); //材质
-			this.mouse = new THREE.Vector2();
-
+			this.object3D = new THREE.Object3D();//obj模型集合
+			this.mouse = new THREE.Vector2();//鼠标二位向量
 			//操作控制台
 			this.controls;
 			this.mouse = new THREE.Vector2();
@@ -93,10 +92,10 @@
 			//获取刀头和横梁
 			this.knife = {};
 			this.beam = {};
-			this.cutter = [];
+			this.cutter = [];//机头和横梁的集合
 		}
 		//获取和设置模型地址
-		get getFatoryUrl() { 
+		get getFatoryUrl() {
 			return this.fatoryUrls;
 		}
 		set setFatoryUrl(urlsArr) {
@@ -121,7 +120,7 @@
 		}
 		set setMachineMtlUrl(url) {
 			this.machineMtlUrl = url;
-			
+
 		}
 
 		get getMtlPicUrl() {
@@ -162,70 +161,72 @@
 
 		}
 		render() {//渲染
-			let _ =this;
+			let _ = this;
 			//辅助线更新
 			// console.log('this.lightHelper,this.shadowCameraHelper',this.lightHelper,this.shadowCameraHelper);
 			// this.lightHelper.update();
 			// this.shadowCameraHelper.update();
+			if (!this.moveMode) {
 
-			//射线定位方法个体
-			// this.raycaster.setFromCamera(this.mouse, this.camera);
-			// let intersects = this.raycaster.intersectObjects(this.scene.children[this.scene.children.length-1].children);
-			// // console.log(intersects);
-			
-			// // console.log("intersects",intersects, this.scene.children);
-			// //选中
-			// let currentHex = {};
-			// if (intersects.length > 0) {
 
-			// 	if (this.INTERSECTEDINTERSECTED != intersects[0].object) {
-			// 		if (this.INTERSECTED) {
-			// 			// this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-			// 			if (this.INTERSECTED.material.length == undefined) {
-			// 				this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-			// 			} else {
-			// 				this.INTERSECTED.material.forEach((element, index) => {
-			// 					element.emissive.setHex(currentHex[index]);
-			// 				});
-			// 			}
+				//射线定位方法个体
+				this.raycaster.setFromCamera(this.mouse, this.camera);
+				let intersects = this.raycaster.intersectObjects(this.scene.children[this.scene.children.length - 1].children);
+				// console.log(intersects);
 
-			// 		}
-			// 		this.INTERSECTED = intersects[0].object;
-			// 		console.log('INTERSECTED',this.INTERSECTED.name);
-			// 		if(this.INTERSECTED.Ctype == "machine"){
-			// 			if (this.INTERSECTED.material.length == undefined) {
-			// 				currentHex = this.INTERSECTED.material.emissive.getHex();
-			// 				this.INTERSECTED.material.emissive.setHex(0xff00ff);
-			// 			} else {
-			// 				this.INTERSECTED.material.forEach((element, index) => {
-			// 					currentHex[index] = element.emissive.getHex();
-			// 					// console.log('element',element)
-			// 					element.emissive.setHex(0xff00ff);
-			// 				});
-			// 			}
-			// 		}
-				
-			// 		// currentHex = this.INTERSECTED.material.emissive.getHex();
-			// 		// this.INTERSECTED.material.emissive.setHex(0xff00ff);
-			// 		// 选中机器
-			// 	}
-			// } else {
+				// console.log("intersects",intersects, this.scene.children);
+				//选中
+				let currentHex = {};
+				if (intersects.length > 0) {
 
-			// 	if (this.INTERSECTED) {
-			// 		if (this.INTERSECTED.material.length == undefined) {
-			// 			this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
-			// 		} else {
-			// 			this.INTERSECTED.material.forEach((element, index) => {
-			// 				element.emissive.setHex(currentHex[index]);
-			// 			});
-			// 		}
+					if (this.INTERSECTEDINTERSECTED != intersects[0].object) {
+						if (this.INTERSECTED) {
+							// this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+							if (this.INTERSECTED.material.length == undefined) {
+								this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+							} else {
+								this.INTERSECTED.material.forEach((element, index) => {
+									element.emissive.setHex(currentHex[index]);
+								});
+							}
 
-			// 	}
-			// 	//  this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+						}
+						this.INTERSECTED = intersects[0].object;
+						console.log('INTERSECTED', this.INTERSECTED.name);
+						if (this.INTERSECTED.Ctype == "machine") {
+							if (this.INTERSECTED.material.length == undefined) {
+								currentHex = this.INTERSECTED.material.emissive.getHex();
+								this.INTERSECTED.material.emissive.setHex(0xff00ff);
+							} else {
+								this.INTERSECTED.material.forEach((element, index) => {
+									currentHex[index] = element.emissive.getHex();
+									// console.log('element',element)
+									element.emissive.setHex(0xff00ff);
+								});
+							}
+						}
 
-			// 	this.INTERSECTED = null;
-			// }
+						// currentHex = this.INTERSECTED.material.emissive.getHex();
+						// this.INTERSECTED.material.emissive.setHex(0xff00ff);
+						// 选中机器
+					}
+				} else {
 
+					if (this.INTERSECTED) {
+						if (this.INTERSECTED.material.length == undefined) {
+							this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+						} else {
+							this.INTERSECTED.material.forEach((element, index) => {
+								element.emissive.setHex(currentHex[index]);
+							});
+						}
+
+					}
+					//  this.INTERSECTED.material.emissive.setHex(this.INTERSECTED.currentHex);
+
+					this.INTERSECTED = null;
+				}
+			}
 			//渲染重置
 
 			this.renderer.render(this.scene, this.camera);
@@ -325,74 +326,58 @@
 			// './model/shiKe/mtl/'
 			console.log(_.mtPiclUrl)
 			mtlLoader.setTexturePath(_.mtPiclUrl);
-			
+
 			// 'model/shiKe/mtl/m_factory.mtl'
 			return new Promise(function (resolve, reject) {
-				mtlLoader.load(type=='factory'?_.fatoryMtlUrl:_.machineMtlUrl, function (materials) {
+				mtlLoader.load(type == 'factory' ? _.fatoryMtlUrl : _.machineMtlUrl, function (materials) {
 					resolve(materials);
 				});
 			});
 		}
 
-	
 
-		loadObjFile(type, materials,position) {//加载obj文件
+
+		loadObjFile(type, materials, position, deg) {//加载obj文件
 			let _ = this;
 			let _child = [];
-			let urls = type=='factory'?this.fatoryUrls:this.machineUrls;
-			if(!urls){
+			let urls = type == 'factory' ? this.fatoryUrls : this.machineUrls;
+			if (!urls) {
 				return false;
 			}
 			for (let i in urls) {
-				// _.mtlLoader(type).then(function (materials) {
-
-						console.log('object3D', _.object3D, materials);
+				_.loader.setMaterials(materials);
+				_.loader.load(urls[i], function (object) {
+					object.traverse(function (child) {
+						if (child instanceof THREE.Mesh) {
 					
-						_.loader.setMaterials(materials);
-						_.loader.load(urls[i], function (object) {
-						object.traverse(function (child) {
-							if (child instanceof THREE.Mesh) {
-								_.Sorting(child);
-								
-								child.castShadow = true; 
-								child.receiveShadow = false;
+							child.castShadow = true;
+							child.receiveShadow = false;
+						}
+						child.Ctype = type;
+						if (_.moveMode) {
+							_.Sorting(child);
+						}
+						if (type != 'factory') {
+							if (!position) {
+								position = { x: 0, y: 0, z: 0 };
 							}
-							child.Ctype = type;
+							child.rotation.set(_.$deg(-90), 0, _.$deg(180 + deg || 0));
+							child.position.x = -position.x;
+							child.position.y = position.y;
+							child.position.z = position.z;
+						} else {
+							child.rotation.set(_.$deg(-90), 0, _.$deg(-180));
+						}
+						_child.push(child);
+					});
+					object.type = type;
+					_child.forEach(element => {
+						_.object3D.add(element);
+					});
+					_.cameraFovReset();
+					_.scene.add(_.object3D);
+				});
 
-							if (type != 'factory') {
-								if (!position) {
-									position = { x: 0, y: 0, z: 0 }
-								}
-								// child.rotation.set(_.$deg(-90), 0, _.$deg(-10));
-								child.rotation.set(_.$deg(0), 0, _.$deg(180));
-								child.position.x = -position.x;
-								child.position.y = position.y;
-								child.position.z = position.z;
-							} else{
-								child.rotation.set(_.$deg(0), 0, _.$deg(-180));
-							}
-							_child.push(child);
-						});
-						object.type = type;
-						// if(type != 'factory'){
-						// 	if(!position){
-						// 		position = {x:0,y:0,z:0}
-						// 	}
-						// 	object.position.x = position.x;
-						// 	object.position.y = position.y;
-						// 	object.position.z = position.z;
-						// } 
-						_child.forEach(element => {
-							_.object3D.add(element);
-						});
-							
-						console.log('object',object);
-						// _.object3D.add(object);
-						_.cameraFovReset();
-						_.scene.add(_.object3D);
-
-						});
-				
 				// });
 			}
 
@@ -456,7 +441,7 @@
 
 
 			let loadFov = (window.innerWidth * window.innerHeight) / (modeWidth * modeHeight) < 21 ? 21 : (window.innerWidth * window.innerHeight) / (modeWidth * modeHeight);
-			if (false) {
+			if (this.moveMode) {
 				this._fov = 5;
 
 			} else {
@@ -472,41 +457,42 @@
 
 	var mode = new modeFatory();
 
-	
-	mode.fatoryInit();
-	mode.setMtlPicUrl='./model/shiKe/mtl/';
 
-	mode.setFatoryMtlUrl = './model/shiKe/mtl/.mtl';
+	mode.fatoryInit();
+	mode.setMtlPicUrl = './model/shiKe/mtl/';
+
+	mode.setFatoryMtlUrl = './model/shiKe/mtl/m_factory.mtl';
 	mode.setFatoryUrl = ['./model/shiKe/new1/m_factory.obj'];
 
 
-	mode.setMachineMtlUrl = './model/shiKe/mtl/m_machine(4).mtl';
-	mode.setMachineUrl = ['./model/shiKe/new1/m_machine(5).obj'];
+	mode.setMachineMtlUrl = './model/shiKe/mtl/m_machine.mtl';
+	mode.setMachineUrl = ['./model/shiKe/new1/m_machine.obj'];
+
+
+	mode.moveMode = true;
 
 
 
-
-
-
-	// mode.mtlLoader('factory').then(function(material){
-	// 	console.log('factory',material);
-		
+	// mode.mtlLoader('factory').then(function (material) {
 	// 	mode._mac['factory'] = material;
-	// 	console.log('factory', mode._mac);
-	// 	mode.loadObjFile('factory', mode._mac['factory'] );
-		
+	// 	mode.loadObjFile('factory', mode._mac['factory']);
 	// });
 	setTimeout(() => {
-			mode.mtlLoader('machine').then(function (material) {
-			console.log('machine', material);
+		mode.mtlLoader('machine').then(function (material) {
 			mode._mac['machine'] = material;
-			console.log('machine', mode._mac);
-
-			mode.loadObjFile('machine', mode._mac['machine'],{x:0,y:0,z:0});
-			// mode.loadObjFile('machine', mode._mac['machine'],{x:0,y:0,z:0});
+			mode.loadObjFile('machine', mode._mac['machine'], { x: 0, y: 0, z: 0 });
 		});
 
 	}, 1000);
+
+	// setTimeout(() => {
+	// 		mode.mtlLoader('machine').then(function (material) {
+	// 			mode._mac['machine'] = material;
+	// 			mode.loadObjFile('machine', mode._mac['machine'], { x: 200, y: 0, z: 100 }, -10);
+	// 		});
+
+	// 	}, 1000);
+
 	// setTimeout(() => {
 	// 		mode.mtlLoader('machine').then(function (material) {
 	// 			console.log('machine', material);
@@ -522,22 +508,22 @@
 
 	// mode.loadObjFile('machine', mode._mac['machine'] );
 	// mode.loadObjFile('factory', mode._mac['factory'] );
-	
+
 
 
 
 
 	// mode.loadObjFile('machine');
 	// mode.loadObjFile('factory');
-	
+
 
 
 
 	btn.onclick = function () {
 		console.log(mode.object3D);
-		for(let i in mode.object3D.children){
-			if(mode.object3D.children[i].name=='m_beam1'){
-				mode.object3D.children[i].position.x +=-200;
+		for (let i in mode.object3D.children) {
+			if (mode.object3D.children[i].name == 'm_beam1') {
+				mode.object3D.children[i].position.x += -200;
 				console.log(mode.object3D.children[i].position.x)
 			}
 		}
