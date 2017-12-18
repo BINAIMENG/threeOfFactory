@@ -4,12 +4,11 @@
 <head>
 	<meta charset="UTF-8">
 	<title>厂房</title>
-	<script src="js/three.js" type="text/javascript" charset="utf-8"></script>
+	<!-- <script src="js/three.js" type="text/javascript" charset="utf-8"></script> -->
 	<!--<script src="js/three.min.js" type="text/javascript" charset="utf-8"></script>-->
+	<script src="https://cdn.bootcss.com/three.js/r83/three.min.js"></script>
 	<script src="js/OBJLoader.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/Detector.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/OrbitControls.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/stats.min.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/MTLLoader.js" type="text/javascript" charset="utf-8"></script>
 	<style type="text/css">
 		html,
@@ -162,7 +161,6 @@
 		render() {//渲染
 			let _ = this;
 			//辅助线更新
-			// console.log('this.lightHelper,this.shadowCameraHelper',this.lightHelper,this.shadowCameraHelper);
 			// this.lightHelper.update();
 			// this.shadowCameraHelper.update();
 			if (!this.moveMode) {
@@ -170,10 +168,7 @@
 
 				//射线定位方法个体
 				this.raycaster.setFromCamera(this.mouse, this.camera);
-				let intersects = this.raycaster.intersectObjects(this.scene.children[this.scene.children.length - 1].children);
-				// console.log(intersects);
-
-				// console.log("intersects",intersects, this.scene.children);
+				let intersects = this.raycaster.intersectObjects(this.object3D.children);
 				//选中
 				let currentHex = {};
 				if (intersects.length > 0) {
@@ -191,19 +186,18 @@
 
 						}
 						this.INTERSECTED = intersects[0].object;
-						console.log('INTERSECTED', this.INTERSECTED.name);
-						if (this.INTERSECTED.Ctype == "machine") {
+						console.log('this.INTERSECTED', this.INTERSECTED);
+						// if (this.INTERSECTED.Ctype == "machine") {
 							if (this.INTERSECTED.material.length == undefined) {
 								currentHex = this.INTERSECTED.material.emissive.getHex();
 								this.INTERSECTED.material.emissive.setHex(0xff00ff);
 							} else {
 								this.INTERSECTED.material.forEach((element, index) => {
 									currentHex[index] = element.emissive.getHex();
-									// console.log('element',element)
 									element.emissive.setHex(0xff00ff);
 								});
 							}
-						}
+						// }
 
 						// currentHex = this.INTERSECTED.material.emissive.getHex();
 						// this.INTERSECTED.material.emissive.setHex(0xff00ff);
@@ -238,7 +232,6 @@
 			
 			this.camera.position.set(-10, 0, 3500);
 			this.camera.up.set(0, 0, 1);
-			console.log(this.camera);
 
 			//灯光
 			let ambient = new THREE.AmbientLight(0xffffff, 0.7);
@@ -248,10 +241,6 @@
 			this.camera.add(spotLight);
 			//场景
 			this.scene.add(this.camera);
-
-
-			var axesHelper = new THREE.AxesHelper(2000);
-			this.scene.add(axesHelper);
 			//辅助线设置
 			this.lightHelper = new THREE.SpotLightHelper(spotLight);
 			// this.scene.add(this.lightHelper);
@@ -348,7 +337,6 @@
 			// let onProgress = function (xhr) {
 			// 	if (xhr.lengthComputable) {
 			// 		var percentComplete = xhr.loaded / xhr.total * 100;
-			// 		console.log(Math.round(percentComplete, 2) + '% downloaded');
 			// 	}
 			// };
 			mtlLoader.setTexturePath(_.mtPiclUrl);
@@ -520,9 +508,7 @@
 
 	// setTimeout(() => {
 	// 		mode.mtlLoader('machine').then(function (material) {
-	// 			console.log('machine', material);
 	// 			mode._mac['machine'] = material;
-	// 			console.log('machine', mode._mac);
 
 	// 			mode.loadObjFile('machine', mode._mac['machine'], { x:500, y: 50, z: 500 });
 	// 		});
@@ -545,11 +531,9 @@
 
 
 	btn.onclick = function () {
-		console.log(mode.object3D);
 		for (let i in mode.object3D.children) {
 			if (mode.object3D.children[i].name == 'm_beam1') {
 				mode.object3D.children[i].position.x += -200;
-				console.log(mode.object3D.children[i].position.x)
 			}
 		}
 	};
